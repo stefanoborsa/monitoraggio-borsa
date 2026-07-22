@@ -1,0 +1,41 @@
+name: Daily Finance Briefing PRO
+
+on:
+  schedule:
+    # 6:30 UTC = 8:30 CEST (estate) / 7:30 CET (inverno)
+    # Per le 8:30 italiane:
+    - cron: '30 6 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install yfinance pandas
+
+      - name: Run Financial Agent PRO
+        run: python daily_finance_pro.py
+
+      - name: Commit and push report
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add reports/
+          git diff --cached --quiet || git commit -m "📊 Aggiornamento briefing finanziario del $(date +%d/%m/%Y)"
+          git push
